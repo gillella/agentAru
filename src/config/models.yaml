@@ -1,0 +1,53 @@
+models:
+  anthropic:
+    - name: claude-3-5-sonnet-20241022
+      display_name: "Claude 3.5 Sonnet"
+      context_window: 200000
+      cost_per_1k_tokens:
+        input: 0.003
+        output: 0.015
+      capabilities: [chat, tool_use, vision]
+
+    - name: claude-3-5-haiku-20241022
+      display_name: "Claude 3.5 Haiku"
+      context_window: 200000
+      cost_per_1k_tokens:
+        input: 0.001
+        output: 0.005
+      capabilities: [chat, tool_use]
+
+  openai:
+    - name: gpt-4o
+      display_name: "GPT-4o"
+      context_window: 128000
+      cost_per_1k_tokens:
+        input: 0.005
+        output: 0.015
+      capabilities: [chat, tool_use, vision]
+
+    - name: gpt-4o-mini
+      display_name: "GPT-4o Mini"
+      context_window: 128000
+      cost_per_1k_tokens:
+        input: 0.00015
+        output: 0.0006
+      capabilities: [chat, tool_use]
+
+  ollama:
+    - name: qwen2.5:7b-instruct
+      display_name: "Qwen2.5 7B Instruct"
+      context_window: 131072
+      local: true
+      capabilities: [chat, tool_use]
+
+    - name: llama3.1:8b
+      display_name: "Llama 3.1 8B"
+      context_window: 128000
+      local: true
+      capabilities: [chat]
+
+    - name: mistral:7b
+      display_name: "Mistral 7B"
+      context_window: 32000
+      local: true
+      capabilities: [chat]

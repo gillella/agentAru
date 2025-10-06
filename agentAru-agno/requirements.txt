@@ -1,0 +1,5 @@
+agno>=0.1.8
+openai>=1.6.0
+sqlalchemy
+fastapi[standard]
+yfinance>=0.2.31 

@@ -1,0 +1,38 @@
+servers:
+- args:
+  - src/mcp/servers/filesystem_server.py
+  auto_connect: false
+  command: python
+  description: File system access tools
+  enabled: true
+  env: {}
+  name: filesystem
+- args:
+  - -y
+  - '@modelcontextprotocol/server-brave-search'
+  auto_connect: false
+  command: npx
+  description: Web search via Brave Search API
+  enabled: false
+  env:
+    BRAVE_API_KEY: ''
+  name: web-search
+- args:
+  - -y
+  - '@modelcontextprotocol/server-github'
+  auto_connect: false
+  command: npx
+  description: GitHub repository access
+  enabled: false
+  env:
+    GITHUB_TOKEN: ''
+  name: github
+- args:
+  - -y
+  - '@modelcontextprotocol/server-sqlite'
+  auto_connect: false
+  command: npx
+  description: SQLite database access
+  enabled: false
+  env: {}
+  name: sqlite

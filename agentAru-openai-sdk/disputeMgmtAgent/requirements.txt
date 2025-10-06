@@ -1,0 +1,4 @@
+python-dotenv
+openai-agents
+stripe
+typing_extensions 
