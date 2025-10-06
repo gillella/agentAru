@@ -92,7 +92,15 @@ async def initialize_agent():
 
             # Model
             model_manager = ModelManager()
-            st.session_state.llm = model_manager.get_model()
+            llm = model_manager.get_model()
+
+            # Bind MCP tools to LLM
+            tools = mcp_manager.tool_manager.get_tools()
+            if tools:
+                st.session_state.llm = llm.bind_tools(tools)
+                st.session_state.llm_no_tools = llm  # Keep original for fallback
+            else:
+                st.session_state.llm = llm
 
             # Memory
             st.session_state.memory_manager = AgentMemoryManager(
@@ -136,7 +144,7 @@ with st.sidebar:
             st.write(f"**{len(tools)} tools available:**")
             for tool in tools:
                 # Extract just the tool name (remove server prefix if present)
-                display_name = tool.name.replace('filesystem_', '').replace('_', ' ').title()
+                display_name = tool.name.replace('filesystem_', '').replace('web_', '').replace('_', ' ').title()
                 st.markdown(f"- `{display_name}`")
                 with st.expander(f"ℹ️ {display_name} details", expanded=False):
                     st.write(f"**Full name:** `{tool.name}`")
@@ -183,8 +191,44 @@ else:
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 try:
-                    response = st.session_state.llm.invoke(prompt)
-                    response_text = response.content
+                    from langchain_core.messages import ToolMessage
+
+                    # Agent loop
+                    messages = [HumanMessage(content=prompt)]
+                    max_iterations = 5
+
+                    for iteration in range(max_iterations):
+                        response = st.session_state.llm.invoke(messages)
+                        messages.append(response)
+
+                        # Check if tools were called
+                        if not response.tool_calls:
+                            # No tools, final answer ready
+                            response_text = response.content
+                            break
+
+                        # Execute tool calls
+                        with st.spinner("Using tools..."):
+                            for tool_call in response.tool_calls:
+                                tool_name = tool_call["name"]
+                                tool_args = tool_call["args"]
+
+                                try:
+                                    # Execute tool asynchronously
+                                    result = asyncio.run(
+                                        st.session_state.mcp_manager.execute_tool(
+                                            tool_name, tool_args
+                                        )
+                                    )
+                                    messages.append(ToolMessage(
+                                        content=str(result),
+                                        tool_call_id=tool_call["id"]
+                                    ))
+                                except Exception as e:
+                                    messages.append(ToolMessage(
+                                        content=f"Error: {e}",
+                                        tool_call_id=tool_call["id"]
+                                    ))
 
                     st.markdown(response_text)
 

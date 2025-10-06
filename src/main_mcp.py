@@ -35,8 +35,9 @@ async def initialize_agent() -> AgentAruGraph:
     # Initialize MCP
     mcp_manager = await initialize_mcp(auto_connect=False)
 
-    # Connect to filesystem server
+    # Connect to both filesystem and web-search servers
     await mcp_manager.connect_server_by_name("filesystem")
+    await mcp_manager.connect_server_by_name("web-search")
 
     # Initialize core components
     model_manager = ModelManager()

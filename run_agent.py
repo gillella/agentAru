@@ -28,21 +28,32 @@ async def run_interactive():
     # Initialize components
     print("Initializing agent...")
 
-    # MCP
+    # MCP - connect to both filesystem and web-search
     mcp_manager = await initialize_mcp(auto_connect=False)
-    success = await mcp_manager.connect_server_by_name("filesystem")
 
-    if success:
+    fs_success = await mcp_manager.connect_server_by_name("filesystem")
+    web_success = await mcp_manager.connect_server_by_name("web-search")
+
+    tools = mcp_manager.tool_manager.get_tools()
+
+    if fs_success:
         print("✅ MCP filesystem server connected")
-        tools = mcp_manager.tool_manager.get_all_tools()
-        print(f"✅ {len(tools)} tools available")
-    else:
-        print("⚠️  MCP server not connected")
+    if web_success:
+        print("✅ MCP web-search server connected")
 
-    # Model Manager
+    print(f"✅ {len(tools)} tools available")
+
+    # Model Manager - bind tools to LLM
     model_manager = ModelManager()
     llm = model_manager.get_model()
-    print(f"✅ Using model: {settings.default_model}")
+
+    # Bind MCP tools to the LLM
+    if tools:
+        llm_with_tools = llm.bind_tools(tools)
+        print(f"✅ Using model: {settings.default_model} with {len(tools)} tools")
+    else:
+        llm_with_tools = llm
+        print(f"✅ Using model: {settings.default_model}")
 
     # Memory
     memory_manager = AgentMemoryManager(user_id="interactive_user")
@@ -70,7 +81,7 @@ async def run_interactive():
 
             # Special commands
             if user_input.lower() == "mcp list":
-                tools = mcp_manager.tool_manager.get_all_tools()
+                tools = mcp_manager.tool_manager.get_tools()
                 print(f"\n📦 Available MCP Tools ({len(tools)}):")
                 for tool in tools:
                     print(f"  - {tool.name}: {tool.description[:60]}")
@@ -84,17 +95,47 @@ async def run_interactive():
                     print(f"  {i}. {mem.get('memory', 'N/A')[:80]}...")
                 continue
 
-            # Process with LLM
+            # Process with LLM using agentic loop
             print("\n🤖 AgentAru: ", end="", flush=True)
 
-            # For now, simple direct LLM call
-            # TODO: Later integrate with full agent graph
-            response = llm.invoke(user_input)
-            print(response.content)
+            from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 
-            # Store interaction in memory (async, don't wait)
+            # Create message history for this turn
+            messages = [HumanMessage(content=user_input)]
+
+            # Agent loop - allow up to 5 iterations
+            max_iterations = 5
+            for iteration in range(max_iterations):
+                # Get LLM response
+                response = llm_with_tools.invoke(messages)
+                messages.append(response)
+
+                # Check if LLM wants to use tools
+                if not response.tool_calls:
+                    # No tools needed, return final answer
+                    print(response.content)
+                    break
+
+                # Execute tool calls
+                for tool_call in response.tool_calls:
+                    tool_name = tool_call["name"]
+                    tool_args = tool_call["args"]
+
+                    # Execute the tool via MCP
+                    try:
+                        result = await mcp_manager.execute_tool(tool_name, tool_args)
+                        messages.append(ToolMessage(
+                            content=str(result),
+                            tool_call_id=tool_call["id"]
+                        ))
+                    except Exception as e:
+                        messages.append(ToolMessage(
+                            content=f"Error executing {tool_name}: {e}",
+                            tool_call_id=tool_call["id"]
+                        ))
+
+            # Store interaction in memory
             try:
-                from langchain_core.messages import HumanMessage, AIMessage
                 memory_manager.add_interaction([
                     HumanMessage(content=user_input),
                     AIMessage(content=response.content)
