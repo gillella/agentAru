@@ -87,6 +87,7 @@ async def initialize_agent():
             # MCP
             mcp_manager = await initialize_mcp(auto_connect=False)
             await mcp_manager.connect_server_by_name("filesystem")
+            await mcp_manager.connect_server_by_name("web-search")
             st.session_state.mcp_manager = mcp_manager
 
             # Model
@@ -134,7 +135,12 @@ with st.sidebar:
             tools = st.session_state.mcp_manager.tool_manager.get_tools()
             st.write(f"**{len(tools)} tools available:**")
             for tool in tools:
-                st.markdown(f'<div class="tool-badge">{tool.name}</div>', unsafe_allow_html=True)
+                # Extract just the tool name (remove server prefix if present)
+                display_name = tool.name.replace('filesystem_', '').replace('_', ' ').title()
+                st.markdown(f"- `{display_name}`")
+                with st.expander(f"ℹ️ {display_name} details", expanded=False):
+                    st.write(f"**Full name:** `{tool.name}`")
+                    st.write(f"**Description:** {tool.description}")
 
         # Memory stats
         st.subheader("🧠 Memory")
