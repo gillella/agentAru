@@ -196,6 +196,7 @@ else:
                     # Agent loop
                     messages = [HumanMessage(content=prompt)]
                     max_iterations = 5
+                    response_text = ""
 
                     for iteration in range(max_iterations):
                         response = st.session_state.llm.invoke(messages)
@@ -229,6 +230,10 @@ else:
                                         content=f"Error: {e}",
                                         tool_call_id=tool_call["id"]
                                     ))
+
+                    # If loop completed without break, use last response
+                    if not response_text and response:
+                        response_text = response.content if hasattr(response, 'content') else "No response generated"
 
                     st.markdown(response_text)
 

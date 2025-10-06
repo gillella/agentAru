@@ -105,6 +105,7 @@ async def run_interactive():
 
             # Agent loop - allow up to 5 iterations
             max_iterations = 5
+            response = None
             for iteration in range(max_iterations):
                 # Get LLM response
                 response = llm_with_tools.invoke(messages)
@@ -133,6 +134,10 @@ async def run_interactive():
                             content=f"Error executing {tool_name}: {e}",
                             tool_call_id=tool_call["id"]
                         ))
+            else:
+                # Loop completed without break - print last response
+                if response and hasattr(response, 'content'):
+                    print(response.content)
 
             # Store interaction in memory
             try:
