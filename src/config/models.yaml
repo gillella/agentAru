@@ -34,6 +34,13 @@ models:
       capabilities: [chat, tool_use]
 
   ollama:
+    - name: qwen3:4b-thinking
+      display_name: "Qwen3 4B Thinking"
+      context_window: 131072
+      local: true
+      capabilities: [chat, tool_use, reasoning]
+      description: "Latest Qwen3 with hybrid reasoning mode (April 2025)"
+
     - name: qwen2.5:7b-instruct
       display_name: "Qwen2.5 7B Instruct"
       context_window: 131072
