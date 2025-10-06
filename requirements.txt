@@ -26,11 +26,16 @@ mcp>=1.0.0
 httpx>=0.27.0
 anyio>=4.3.0
 
+# Web Scraping (for web search tool)
+beautifulsoup4>=4.12.0
+requests>=2.31.0
+
 # UI & Utils
-streamlit==1.31.0
+streamlit>=1.31.0
 python-dotenv==1.0.1
-pydantic==2.6.0
+pydantic>=2.6.0
 pydantic-settings==2.1.0
+langchain-ollama>=0.3.0
 
 # Development
 pytest==8.0.0
